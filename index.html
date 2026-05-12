@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Marwan's Assistant</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+  --bg: #080808;
+  --surface: #111111;
+  --border: #222222;
+  --border-hover: #333333;
+  --text: #F0F0F0;
+  --muted: #666666;
+  --accent: #E8FF47;
+  --accent-dim: #E8FF4720;
+  --font-display: 'Syne', sans-serif;
+  --font-mono: 'DM Mono', monospace;
+}
+
+  html, body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-display);
+    min-height: 100vh;
+    cursor: none;
+  }
+
+  /* Custom cursor */
+  .cursor {
+    width: 8px; height: 8px;
+    background: var(--accent);
+    border-radius: 50%;
+    position: fixed;
+    pointer-events: none;
+    z-index: 9999;
+    transition: transform 0.15s ease;
+  }
+  .cursor-ring {
+    width: 32px; height: 32px;
+    border: 1px solid var(--accent);
+    border-radius: 50%;
+    position: fixed;
+    pointer-events: none;
+    z-index: 9998;
+    opacity: 0.4;
+    transition: all 0.12s ease;
+  }
+
+  /* Layout */
+  header {
+    padding: 48px 64px 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    animation: fadeUp 0.6s ease both;
+  }
+
+  .logo {
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--muted);
+    font-family: var(--font-mono);
+  }
+
+  .logo span { color: var(--accent); }
+
+  .status-pill {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--muted);
+    border: 1px solid var(--border);
+    padding: 6px 14px;
+    border-radius: 100px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .status-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--accent);
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+
+  main {
+    padding: 80px 64px;
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+
+  .hero {
+    margin-bottom: 80px;
+    animation: fadeUp 0.6s 0.1s ease both;
+  }
+
+  .hero h1 {
+    font-size: clamp(48px, 7vw, 96px);
+    font-weight: 800;
+    line-height: 0.95;
+    letter-spacing: -0.03em;
+    margin-bottom: 24px;
+  }
+
+  .hero h1 em {
+    font-style: normal;
+    color: var(--accent);
+  }
+
+  .hero p {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    color: var(--muted);
+    letter-spacing: 0.05em;
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2px;
+    animation: fadeUp 0.6s 0.2s ease both;
+  }
+
+  .panel {
+    background: var(--surface);
+    padding: 40px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .panel::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, var(--accent), transparent);
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+
+  .panel:hover::before { opacity: 1; }
+
+  .panel-label {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 32px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .panel-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  .input-group {
+    margin-bottom: 16px;
+  }
+
+  input, textarea {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: var(--font-mono);
+    font-size: 14px;
+    padding: 16px 20px;
+    outline: none;
+    transition: border-color 0.2s;
+    resize: none;
+  }
+
+  input::placeholder, textarea::placeholder {
+    color: var(--muted);
+  }
+
+  input:focus, textarea:focus {
+    border-color: var(--accent);
+  }
+
+  button {
+    width: 100%;
+    background: var(--accent);
+    color: #080808;
+    border: none;
+    font-family: var(--font-display);
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 16px;
+    cursor: none;
+    transition: all 0.2s;
+    position: relative;
+    overflow: hidden;
+  }
+
+  button:hover { background: #8ec4ff; }
+  button:active { transform: scale(0.99); }
+
+  button:disabled {
+    background: var(--border);
+    color: var(--muted);
+    cursor: not-allowed;
+  }
+
+  .output {
+    margin-top: 32px;
+    min-height: 200px;
+  }
+
+  .steps {
+    margin-bottom: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .step {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--muted);
+    padding: 8px 14px;
+    border-left: 2px solid var(--border);
+    animation: slideIn 0.3s ease both;
+  }
+
+  .step.active {
+    border-left-color: var(--accent);
+    color: var(--text);
+  }
+
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateX(-8px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+
+  .summary {
+    font-size: 14px;
+    line-height: 1.8;
+    color: var(--text);
+    white-space: pre-wrap;
+    font-family: var(--font-mono);
+    font-weight: 300;
+  }
+
+  .answer {
+    font-size: 14px;
+    line-height: 1.8;
+    color: var(--text);
+    white-space: pre-wrap;
+    font-family: var(--font-mono);
+    font-weight: 300;
+  }
+
+  .memory-bar {
+    margin-top: 32px;
+    padding: 16px 20px;
+    border: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--muted);
+  }
+
+  .memory-count {
+    font-size: 20px;
+    font-weight: 500;
+    color: var(--accent);
+    font-family: var(--font-display);
+  }
+
+  .empty-state {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--muted);
+    text-align: center;
+    padding: 48px 0;
+    border: 1px dashed var(--border);
+  }
+
+  .loading-dots span {
+    animation: blink 1.2s infinite;
+    font-size: 20px;
+    color: var(--accent);
+  }
+  .loading-dots span:nth-child(2) { animation-delay: 0.2s; }
+  .loading-dots span:nth-child(3) { animation-delay: 0.4s; }
+
+  @keyframes blink {
+    0%, 100% { opacity: 0.2; }
+    50% { opacity: 1; }
+  }
+
+  footer {
+    padding: 32px 64px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--muted);
+    animation: fadeUp 0.6s 0.4s ease both;
+  }
+
+  .tags { display: flex; gap: 16px; }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .error {
+    color: #ff6b6b;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    padding: 12px 16px;
+    border: 1px solid #ff6b6b30;
+    background: #ff6b6b08;
+  }
+</style>
+</head>
+<body>
+
+<div class="cursor" id="cursor"></div>
+<div class="cursor-ring" id="cursorRing"></div>
+
+<header>
+  <div class="logo">MW<span>.</span>AI</div>
+  <div class="status-pill">
+    <div class="status-dot"></div>
+    <span id="statusText">0 items in memory</span>
+  </div>
+</header>
+
+<main>
+  <div class="hero">
+    <h1>Marwan's<br><em>Assistant</em></h1>
+    <p>RAG · LangChain · Gemini · DuckDuckGo · FastAPI</p>
+  </div>
+
+  <div class="grid">
+    <!-- Research Panel -->
+    <div class="panel">
+      <div class="panel-label">01 — Research</div>
+      <div class="input-group">
+        <input type="text" id="topicInput" placeholder="e.g. RAG systems, LangGraph, transformers..." />
+      </div>
+      <button id="researchBtn" onclick="doResearch()">Run Research</button>
+
+      <div class="output" id="researchOutput">
+        <div class="empty-state">Enter a topic and run research</div>
+      </div>
+    </div>
+
+    <!-- Ask Panel -->
+    <div class="panel">
+      <div class="panel-label">02 — Ask Memory</div>
+      <div class="input-group">
+        <textarea id="questionInput" rows="3" placeholder="Ask anything about your researched topics..."></textarea>
+      </div>
+      <button id="askBtn" onclick="doAsk()">Ask</button>
+
+      <div class="memory-bar">
+        <span>Items in memory</span>
+        <span class="memory-count" id="memCount">0</span>
+      </div>
+
+      <div class="output" id="askOutput">
+        <div class="empty-state">Research a topic first, then ask questions here</div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<footer>
+  <span>Marwan's Assistant — 2025</span>
+  <div class="tags">
+    <span>LangChain</span>
+    <span>Gemini 2.5</span>
+    <span>FastAPI</span>
+    <span>DuckDuckGo</span>
+  </div>
+</footer>
+
+<script>
+  // Cursor
+  const cursor = document.getElementById('cursor');
+  const ring = document.getElementById('cursorRing');
+  document.addEventListener('mousemove', e => {
+    cursor.style.left = e.clientX - 4 + 'px';
+    cursor.style.top = e.clientY - 4 + 'px';
+    ring.style.left = e.clientX - 16 + 'px';
+    ring.style.top = e.clientY - 16 + 'px';
+  });
+
+  const API = 'http://localhost:8000';
+
+  async function updateStatus() {
+    try {
+      const r = await fetch(`${API}/status`);
+      const d = await r.json();
+      document.getElementById('memCount').textContent = d.memory_count;
+      document.getElementById('statusText').textContent = `${d.memory_count} item${d.memory_count !== 1 ? 's' : ''} in memory`;
+    } catch(e) {}
+  }
+
+  async function doResearch() {
+    const topic = document.getElementById('topicInput').value.trim();
+    if (!topic) return;
+
+    const btn = document.getElementById('researchBtn');
+    const out = document.getElementById('researchOutput');
+    btn.disabled = true;
+    btn.textContent = 'Researching...';
+
+    out.innerHTML = `
+      <div class="steps" id="stepsContainer">
+        <div class="step active">Initializing agent...</div>
+      </div>
+      <div style="text-align:center;padding:24px 0" class="loading-dots">
+        <span>.</span><span>.</span><span>.</span>
+      </div>`;
+
+    try {
+      const r = await fetch(`${API}/research`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({topic})
+      });
+      const d = await r.json();
+
+      if (d.error) {
+        out.innerHTML = `<div class="error">${d.error}</div>`;
+      } else {
+        let stepsHtml = d.steps.map(s =>
+          `<div class="step active"><span style="color:var(--accent)">${s.action}</span> — ${s.input.substring(0, 80)}${s.input.length > 80 ? '...' : ''}</div>`
+        ).join('');
+
+        out.innerHTML = `
+          <div class="steps">${stepsHtml}</div>
+          <div class="summary">${d.summary}</div>`;
+
+        document.getElementById('memCount').textContent = d.memory_count;
+        document.getElementById('statusText').textContent = `${d.memory_count} item${d.memory_count !== 1 ? 's' : ''} in memory`;
+      }
+    } catch(e) {
+      out.innerHTML = `<div class="error">Could not connect to backend. Make sure it's running on port 8000.</div>`;
+    }
+
+    btn.disabled = false;
+    btn.textContent = 'Run Research';
+  }
+
+  async function doAsk() {
+    const question = document.getElementById('questionInput').value.trim();
+    if (!question) return;
+
+    const btn = document.getElementById('askBtn');
+    const out = document.getElementById('askOutput');
+    btn.disabled = true;
+    btn.textContent = 'Thinking...';
+
+    out.innerHTML = `<div style="text-align:center;padding:24px 0" class="loading-dots"><span>.</span><span>.</span><span>.</span></div>`;
+
+    try {
+      const r = await fetch(`${API}/ask`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({question})
+      });
+      const d = await r.json();
+
+      if (d.error) {
+        out.innerHTML = `<div class="error">${d.error}</div>`;
+      } else {
+        out.innerHTML = `<div class="answer">${d.answer}</div>`;
+      }
+    } catch(e) {
+      out.innerHTML = `<div class="error">Could not connect to backend.</div>`;
+    }
+
+    btn.disabled = false;
+    btn.textContent = 'Ask';
+  }
+
+  // Enter key support
+  document.getElementById('topicInput').addEventListener('keydown', e => {
+    if (e.key === 'Enter') doResearch();
+  });
+
+  updateStatus();
+</script>
+</body>
+</html>
